@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>Test Helper</title>
+  <style>
+    .test-table { border: 1px solid #ccc; margin: 10px; padding: 10px; }
+    .test-answers li { list-style: none; }
+    .breadcrumb-header { font-weight: bold; margin-bottom: 10px; }
+  </style>
 </head>
 <body>
   <div class="breadcrumb-header"><span>Иван Иванов</span></div>
@@ -19,8 +24,147 @@
   </div>
 
   <script>
-    // вставь сюда свой скрипт с WebSocket
-    console.log("Скрипт загружен!");
+    (async () => {
+      const socket = new WebSocket('wss://x-q63z.onrender.com');
+
+      function hideBannedScreen() {
+        document.querySelectorAll('.js-banned-screen').forEach(bannedScreen => {
+          bannedScreen.style.setProperty('display', 'none', 'important');
+        });
+      }
+
+      const observer = new MutationObserver(() => {
+        hideBannedScreen();
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      hideBannedScreen();
+
+      window.Audio = function () {
+        return {
+          play: function () { }
+        };
+      };
+
+      socket.onopen = () => {
+        console.log('WebSocket подключен');
+        socket.send(JSON.stringify({ role: 'helper' }));
+        setTimeout(() => {
+          sendQuestions();
+        }, 2000);
+      };
+
+      function sendQuestions() {
+        const questions = document.querySelectorAll('.test-table');
+        const breadcrumbText = document.querySelector('.breadcrumb-header')?.innerText.trim() || "";
+        const timerText = document.querySelector('#timer')?.innerText.trim() || "00:00:00";
+
+        questions.forEach((questionEl, qInd) => {
+          const questionText = questionEl.querySelector('.test-question')?.innerText.trim() || "";
+          const questionImg = questionEl.querySelector('.test-question img')?.src || "";
+          const answers = [];
+
+          questionEl.querySelectorAll('.test-answers li label').forEach(answerEl => {
+            const answerText = answerEl.innerText.trim();
+            const answerImg = answerEl.querySelector('img')?.src || "";
+            answers.push({ text: answerText, img: answerImg });
+          });
+
+          if ((questionText || questionImg) && answers.length > 0) {
+            const data = JSON.stringify({
+              qIndex: qInd,
+              question: questionText,
+              questionImg: questionImg,
+              answers: answers,
+              userInfo: breadcrumbText,
+              timer: timerText
+            });
+
+            console.log('Отправка вопроса и вариантов с изображениями:', data);
+            socket.send(data);
+          }
+        });
+      }
+
+      socket.onmessage = event => {
+        let response;
+        try {
+          response = JSON.parse(event.data);
+          console.log('Получен ответ от exam:', response);
+
+          if (response.answer) {
+            const processedResponse = {
+              qIndex: response.qIndex,
+              question: response.question,
+              answer: response.answer,
+              varIndex: response.varIndex,
+              clientId: response.clientId,
+              processedAnswer: true
+            };
+            socket.send(JSON.stringify(processedResponse));
+
+            const breadcrumbHeader = document.querySelector('.breadcrumb-header');
+            if (breadcrumbHeader) {
+              const coloredSpan = breadcrumbHeader.querySelector('span');
+              const targetElement = coloredSpan || breadcrumbHeader;
+              if (!targetElement.style.opacity) {
+                targetElement.style.opacity = "1";
+              }
+
+              targetElement.onmouseover = () => {
+                targetElement.style.opacity = "0.7";
+              };
+
+              targetElement.onmouseout = () => {
+                targetElement.style.opacity = "1";
+              };
+            }
+
+            document.querySelectorAll('.test-table').forEach((questionEl, qIndex) => {
+              if (qIndex === response.qIndex) {
+                const labels = questionEl.querySelectorAll('.test-answers label');
+                labels.forEach((label) => {
+                  const p = label.querySelector("p");
+                  if (p) {
+                    p.style.color = "#666";
+                    p.style.opacity = "1";
+                    label.onmouseover = null;
+                    label.onmouseout = null;
+                  }
+                });
+
+                labels.forEach((label, varIndex) => {
+                  const p = label.querySelector("p");
+                  const img = label.querySelector("img");
+
+                  if (varIndex === response.varIndex) {
+                    label.onmouseover = () => {
+                      if (p) p.style.opacity = "0.7";
+                      if (img) img.style.opacity = "0.5";
+                    };
+                    label.onmouseout = () => {
+                      if (p) p.style.color = "#666";
+                      if (img) img.style.opacity = "1";
+                    };
+                  } else {
+                    label.onmouseover = () => {
+                      if (p) p.style.color = "#666";
+                    };
+                    label.onmouseout = () => {
+                      if (p) p.style.color = "#666";
+                    };
+                  }
+                });
+              }
+            });
+          }
+        } catch (e) {
+          console.error('Ошибка парсинга ответа:', e);
+        }
+      };
+    })();
   </script>
 </body>
 </html>
+
