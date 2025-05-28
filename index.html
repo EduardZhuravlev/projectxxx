@@ -2,168 +2,73 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Test Helper</title>
-  <style>
-    .test-table { border: 1px solid #ccc; margin: 10px; padding: 10px; }
-    .test-answers li { list-style: none; }
-    .breadcrumb-header { font-weight: bold; margin-bottom: 10px; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Красивый сайт</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.6/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
-  <div class="breadcrumb-header"><span>Иван Иванов</span></div>
-  <div id="timer">00:15:32</div>
+  <div id="root"></div>
+  <script type="text/babel">
+    function Header() {
+      return (
+        <header className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-6">
+          <div className="container mx-auto px-4">
+            <h1 className="text-4xl font-bold text-center">Добро пожаловать!</h1>
+            <p className="text-center mt-2">Современный и стильный сайт</p>
+          </div>
+        </header>
+      );
+    }
 
-  <div class="test-table">
-    <div class="test-question">Что изображено на картинке?</div>
-    <img class="test-question" src="https://via.placeholder.com/150" alt="Картинка вопроса">
-    <ul class="test-answers">
-      <li><label><p>Вариант 1</p></label></li>
-      <li><label><p>Вариант 2</p></label></li>
-      <li><label><p>Вариант 3</p></label></li>
-    </ul>
-  </div>
+    function MainSection() {
+      return (
+        <section className="py-12 bg-gray-100">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-semibold text-center text-gray-800 mb-8">О нас</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-300">
+                <h3 className="text-xl font-bold text-gray-800">Качество</h3>
+                <p className="mt-2 text-gray-600">Мы создаем продукты с акцентом на качество и детали.</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-300">
+                <h3 className="text-xl font-bold text-gray-800">Инновации</h3>
+                <p className="mt-2 text-gray-600">Используем новейшие технологии для вашего удобства.</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-300">
+                <h3 className="text-xl font-bold text-gray-800">Поддержка</h3>
+                <p className="mt-2 text-gray-600">Всегда готовы помочь вам 24/7.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
 
-  <script>
-    (async () => {
-      const socket = new WebSocket('wss://projectxxx.onrender.com');
+    function Footer() {
+      return (
+        <footer className="bg-gray-800 text-white py-6">
+          <div className="container mx-auto px-4 text-center">
+            <p>&copy; 2025 Красивый сайт. Все права защищены.</p>
+          </div>
+        </footer>
+      );
+    }
 
-      function hideBannedScreen() {
-        document.querySelectorAll('.js-banned-screen').forEach(bannedScreen => {
-          bannedScreen.style.setProperty('display', 'none', 'important');
-        });
-      }
+    function App() {
+      return (
+        <div>
+          <Header />
+          <MainSection />
+          <Footer />
+        </div>
+      );
+    }
 
-      const observer = new MutationObserver(() => {
-        hideBannedScreen();
-      });
-
-      observer.observe(document.body, { childList: true, subtree: true });
-
-      hideBannedScreen();
-
-      window.Audio = function () {
-        return {
-          play: function () { }
-        };
-      };
-
-      socket.onopen = () => {
-        console.log('WebSocket подключен');
-        socket.send(JSON.stringify({ role: 'helper' }));
-        setTimeout(() => {
-          sendQuestions();
-        }, 2000);
-      };
-
-      function sendQuestions() {
-        const questions = document.querySelectorAll('.test-table');
-        const breadcrumbText = document.querySelector('.breadcrumb-header')?.innerText.trim() || "";
-        const timerText = document.querySelector('#timer')?.innerText.trim() || "00:00:00";
-
-        questions.forEach((questionEl, qInd) => {
-          const questionText = questionEl.querySelector('.test-question')?.innerText.trim() || "";
-          const questionImg = questionEl.querySelector('.test-question img')?.src || "";
-          const answers = [];
-
-          questionEl.querySelectorAll('.test-answers li label').forEach(answerEl => {
-            const answerText = answerEl.innerText.trim();
-            const answerImg = answerEl.querySelector('img')?.src || "";
-            answers.push({ text: answerText, img: answerImg });
-          });
-
-          if ((questionText || questionImg) && answers.length > 0) {
-            const data = JSON.stringify({
-              qIndex: qInd,
-              question: questionText,
-              questionImg: questionImg,
-              answers: answers,
-              userInfo: breadcrumbText,
-              timer: timerText
-            });
-
-            console.log('Отправка вопроса и вариантов с изображениями:', data);
-            socket.send(data);
-          }
-        });
-      }
-
-      socket.onmessage = event => {
-        let response;
-        try {
-          response = JSON.parse(event.data);
-          console.log('Получен ответ от exam:', response);
-
-          if (response.answer) {
-            const processedResponse = {
-              qIndex: response.qIndex,
-              question: response.question,
-              answer: response.answer,
-              varIndex: response.varIndex,
-              clientId: response.clientId,
-              processedAnswer: true
-            };
-            socket.send(JSON.stringify(processedResponse));
-
-            const breadcrumbHeader = document.querySelector('.breadcrumb-header');
-            if (breadcrumbHeader) {
-              const coloredSpan = breadcrumbHeader.querySelector('span');
-              const targetElement = coloredSpan || breadcrumbHeader;
-              if (!targetElement.style.opacity) {
-                targetElement.style.opacity = "1";
-              }
-
-              targetElement.onmouseover = () => {
-                targetElement.style.opacity = "0.7";
-              };
-
-              targetElement.onmouseout = () => {
-                targetElement.style.opacity = "1";
-              };
-            }
-
-            document.querySelectorAll('.test-table').forEach((questionEl, qIndex) => {
-              if (qIndex === response.qIndex) {
-                const labels = questionEl.querySelectorAll('.test-answers label');
-                labels.forEach((label) => {
-                  const p = label.querySelector("p");
-                  if (p) {
-                    p.style.color = "#666";
-                    p.style.opacity = "1";
-                    label.onmouseover = null;
-                    label.onmouseout = null;
-                  }
-                });
-
-                labels.forEach((label, varIndex) => {
-                  const p = label.querySelector("p");
-                  const img = label.querySelector("img");
-
-                  if (varIndex === response.varIndex) {
-                    label.onmouseover = () => {
-                      if (p) p.style.opacity = "0.7";
-                      if (img) img.style.opacity = "0.5";
-                    };
-                    label.onmouseout = () => {
-                      if (p) p.style.color = "#666";
-                      if (img) img.style.opacity = "1";
-                    };
-                  } else {
-                    label.onmouseover = () => {
-                      if (p) p.style.color = "#666";
-                    };
-                    label.onmouseout = () => {
-                      if (p) p.style.color = "#666";
-                    };
-                  }
-                });
-              }
-            });
-          }
-        } catch (e) {
-          console.error('Ошибка парсинга ответа:', e);
-        }
-      };
-    })();
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
